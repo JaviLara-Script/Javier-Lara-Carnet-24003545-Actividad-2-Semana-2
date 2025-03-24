@@ -1,0 +1,61 @@
+Crear store.js en frontend store 
+
+import { configureStore } from "@reduxjs/toolkit";
+import habitsReducer from "./habitsSlice";
+
+export const store = configureStore({
+    reducer: {
+        habits: habitsReducer
+    }
+});
+
+Crear habitsslice. Js en frontend store
+
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "axios";
+
+export const fetchHabits = createAsyncThunk("habits/fetchHabits", async () => {
+    const response = await axios.get("http://localhost:5000/habits");
+    return response.data;
+});
+
+const habitsSlice = createSlice({
+    name: "habits",
+    initialState: {
+        habits: [],
+        status: "idle",
+        error: null
+    },
+    reducers: {},
+    extraReducers: (builder) => {
+        builder
+            .addCase(fetchHabits.pending, (state) => {
+                state.status = "loading";
+            })
+            .addCase(fetchHabits.fulfilled, (state, action) => {
+                state.status = "succeeded";
+                state.habits = action.payload;
+            })
+            .addCase(fetchHabits.rejected, (state, action) => {
+                state.status = "failed";
+                state.error = action.error.message;
+            });
+    }
+});
+
+export default habitsSlice.reducer;
+
+Envolver la aplicación con Redux en app.js
+
+import { Provider } from "react-redux";
+import { store } from "../store/store";
+
+function MyApp({ Component, pageProps }) {
+    return (
+        <Provider store={store}>
+            <Component {...pageProps} />
+        </Provider>
+    );
+}
+
+export default MyApp;
