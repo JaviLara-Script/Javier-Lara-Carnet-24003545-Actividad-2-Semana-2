@@ -1,0 +1,42 @@
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import dotenv from "dotenv";
+
+dotenv.config();
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Conectar a MongoDB
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => console.log("MongoDB conectado"))
+  .catch(err => console.log(err));
+
+// Modelo de Hábito
+const habitSchema = new mongoose.Schema({
+    name: String,
+    progress: Number,  // Días consecutivos
+    userId: String
+});
+const Habit = mongoose.model("Habit", habitSchema);
+
+// Endpoint para obtener todos los hábitos
+app.get("/habits", async (req, res) => {
+    try {
+        const habits = await Habit.find();
+        res.json(habits);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Iniciar servidor
+app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});
