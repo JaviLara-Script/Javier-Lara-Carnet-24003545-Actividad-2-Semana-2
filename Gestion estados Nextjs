@@ -1,0 +1,81 @@
+/* =============================
+   BACKEND - Express.js + MongoDB
+   ============================= */
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+mongoose.connect("mongodb+srv://tu_usuario:tu_contraseña@cluster0.mongodb.net/habitsDB", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+const habitSchema = new mongoose.Schema({
+  name: String,
+  streak: Number,
+  completed: Boolean,
+});
+
+const Habit = mongoose.model("Habit", habitSchema);
+
+app.get("/habits", async (req, res) => {
+  const habits = await Habit.find();
+  res.json(habits);
+});
+
+app.listen(5000, () => console.log("Backend corriendo en http://localhost:5000"));
+
+/* =============================
+   FRONTEND - Next.js + Redux
+   ============================= */
+"use client";
+import { configureStore, createSlice } from "@reduxjs/toolkit";
+import { Provider, useDispatch, useSelector } from "react-redux";
+import { useEffect } from "react";
+
+const habitsSlice = createSlice({
+  name: "habits",
+  initialState: { list: [] },
+  reducers: {
+    setHabits: (state, action) => {
+      state.list = action.payload;
+    },
+  },
+});
+
+const store = configureStore({ reducer: { habits: habitsSlice.reducer } });
+const { setHabits } = habitsSlice.actions;
+
+function Habits() {
+  const dispatch = useDispatch();
+  const habits = useSelector((state) => state.habits.list);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/habits")
+      .then((res) => res.json())
+      .then((data) => dispatch(setHabits(data)));
+  }, [dispatch]);
+
+  return (
+    <div>
+      <h1>Lista de Hábitos</h1>
+      <ul>
+        {habits.map((habit) => (
+          <li key={habit._id}>{habit.name} - Racha: {habit.streak}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Provider store={store}>
+      <Habits />
+    </Provider>
+  );
+}
